@@ -16,11 +16,11 @@ flags.DEFINE_float('entropy_reg', 0.01, 'Entropy regularization coefficient.')
 
 from datetime import datetime
 
-from experiments.run_context import RunContext
+from run_context import RunContext
 from datasets import Cifar100ZCA
 #from mean_teacher.model import Model
-from mean_teacher.myresnet_model import Model
-from mean_teacher import minibatching
+from myresnet_model import Model
+from . import minibatching
 
 
 logging.basicConfig(level=logging.INFO)
