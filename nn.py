@@ -12,7 +12,7 @@ import logging
 import tensorflow as tf
 from tensorflow.contrib import slim
 
-from .framework import assert_shape
+from framework import assert_shape
 
 
 LOG = logging.getLogger('main')
