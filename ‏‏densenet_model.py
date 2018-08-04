@@ -109,18 +109,13 @@ class Model:
             self.adam_beta_2 = tf.add((1 - step_rampup_value) * self.hyper['adam_beta_2_during_rampup'],
                                       step_rampup_value * self.hyper['adam_beta_2_after_rampup'],
                                       name='adam_beta_2')
-##            self.ema_decay = tf.add((1 - step_rampup_value) * self.hyper['ema_decay_during_rampup'],
-##                                    step_rampup_value * self.hyper['ema_decay_after_rampup'],
-##                                    name='ema_decay')
 
         (
             (self.class_logits_1, self.cons_logits_1),
             (self.class_logits_2, self.cons_logits_2),
-##            (self.class_logits_ema, self.cons_logits_ema)
         ) = inference(
             self.images,
             is_training=self.is_training,
-##            ema_decay=self.ema_decay,
             ema_decay=0,
             input_noise=self.hyper['input_noise'],
             student_dropout_probability=self.hyper['student_dropout_probability'],
@@ -132,19 +127,14 @@ class Model:
 
         with tf.name_scope("objectives"):
             self.mean_error_1, self.errors_1 = errors(self.class_logits_1, self.labels)
-##            self.mean_error_ema, self.errors_ema = errors(self.class_logits_ema, self.labels)
 
             self.mean_class_cost_1, self.class_costs_1 = classification_costs(
                 self.class_logits_1, self.labels)
-##            self.mean_class_cost_ema, self.class_costs_ema = classification_costs(
-##                self.class_logits_ema, self.labels)
 
             labeled_consistency = self.hyper['apply_consistency_to_labeled']
             consistency_mask = tf.logical_or(tf.equal(self.labels, -1), labeled_consistency)
             self.mean_cons_cost_pi, self.cons_costs_pi = consistency_costs(
                 self.cons_logits_1, self.class_logits_2, self.cons_coefficient, consistency_mask, self.hyper['consistency_trust'])
-##            self.mean_cons_cost_mt, self.cons_costs_mt = consistency_costs(
-##                self.cons_logits_1, self.class_logits_ema, self.cons_coefficient, consistency_mask, self.hyper['consistency_trust'])
 
             entropy_factor = self.hyper['entropy_factor']
             print('EntFactor:', entropy_factor)
@@ -161,11 +151,8 @@ class Model:
                 return mean_l2, l2s
 
             self.mean_res_l2_1, self.res_l2s_1 = l2_norms(self.class_logits_1 - self.cons_logits_1)
-##            self.mean_res_l2_ema, self.res_l2s_ema = l2_norms(self.class_logits_ema - self.cons_logits_ema)
             self.res_costs_1 = self.hyper['logit_distance_cost'] * self.res_l2s_1
             self.mean_res_cost_1 = tf.reduce_mean(self.res_costs_1)
-##            self.res_costs_ema = self.hyper['logit_distance_cost'] * self.res_l2s_ema
-##            self.mean_res_cost_ema = tf.reduce_mean(self.res_costs_ema)
 
             self.mean_total_cost_pi, self.total_costs_pi = total_costs(
                 self.class_costs_1, self.cons_costs_pi, self.res_costs_1, self.entropy_loss)
@@ -368,11 +355,7 @@ def inference(inputs, is_training, ema_decay, input_noise, student_dropout_proba
         class_logits_1, cons_logits_1 = tower(**tower_args, dropout_probability=student_dropout_probability, name=name_scope)
     with name_variable_scope("secondary", var_scope, reuse=True) as (name_scope, _):
         class_logits_2, cons_logits_2 = tower(**tower_args, dropout_probability=teacher_dropout_probability, name=name_scope)
-#    with ema_variable_scope("ema", var_scope, decay=ema_decay):
-#        class_logits_ema, cons_logits_ema = tower(**tower_args, dropout_probability=teacher_dropout_probability, name=name_scope)
-#        class_logits_ema, cons_logits_ema = tf.stop_gradient(class_logits_ema), tf.stop_gradient(cons_logits_ema)
-    return (class_logits_1, cons_logits_1), (class_logits_2, cons_logits_2) #, (class_logits_ema, cons_logits_ema)
-
+    return (class_logits_1, cons_logits_1), (class_logits_2, cons_logits_2) 
 
 def tower(inputs,
           is_training,
@@ -399,9 +382,7 @@ def tower(inputs,
             is_training=is_training
         )
 
-        with \
-        slim.arg_scope([wn.conv2d], **default_conv_args), \
-        slim.arg_scope(training_mode_funcs, **training_args):
+        with slim.arg_scope([wn.conv2d], **default_conv_args), slim.arg_scope(training_mode_funcs, **training_args):
             #pylint: disable=no-value-for-parameter
             net = inputs
             assert_shape(net, [None, 32, 32, 3])
@@ -425,50 +406,9 @@ def tower(inputs,
 
             mode =  tf.estimator.ModeKeys.TRAIN
             primary_logits = resnet.cifar10_model_fn(net, mode) 
-            secondary_logits = primary_logits #resnet.cifar10_model_fn(net, mode) 
-#            mode =  tf.estimator.ModeKeys.EVAL
-#            primary_logits_infer = resnet.cifar10_model_fn(net, mode) 
+            secondary_logits = primary_logits 
 
             return primary_logits, secondary_logits
-
-            net = wn.conv2d(net, 128, scope="conv_1_1")
-            net = wn.conv2d(net, 128, scope="conv_1_2")
-            net = wn.conv2d(net, 128, scope="conv_1_3")
-            net = slim.max_pool2d(net, [2, 2], scope='max_pool_1')
-            net = slim.dropout(net, 1 - dropout_probability, scope='dropout_probability_1')
-            assert_shape(net, [None, 16, 16, 128])
-
-            net = wn.conv2d(net, 256, scope="conv_2_1")
-            net = wn.conv2d(net, 256, scope="conv_2_2")
-            net = wn.conv2d(net, 256, scope="conv_2_3")
-            net = slim.max_pool2d(net, [2, 2], scope='max_pool_2')
-            net = slim.dropout(net, 1 - dropout_probability, scope='dropout_probability_2')
-            assert_shape(net, [None, 8, 8, 256])
-
-            net = wn.conv2d(net, 512, padding='VALID', scope="conv_3_1")
-            assert_shape(net, [None, 6, 6, 512])
-            net = wn.conv2d(net, 256, kernel_size=[1, 1], scope="conv_3_2")
-            net = wn.conv2d(net, 128, kernel_size=[1, 1], scope="conv_3_3")
-            net = slim.avg_pool2d(net, [6, 6], scope='avg_pool')
-            assert_shape(net, [None, 1, 1, 128])
-
-            net = slim.flatten(net)
-            assert_shape(net, [None, 128])
-
-            primary_logits = wn.fully_connected(net, 100, init=is_initialization)
-            secondary_logits = wn.fully_connected(net, 100, init=is_initialization)
-
-            with tf.control_dependencies([tf.assert_greater_equal(num_logits, 1),
-                                          tf.assert_less_equal(num_logits, 2)]):
-                secondary_logits = tf.case([
-                    (tf.equal(num_logits, 1), lambda: primary_logits),
-                    (tf.equal(num_logits, 2), lambda: secondary_logits),
-                ], exclusive=True, default=lambda: primary_logits)
-
-            assert_shape(primary_logits, [None, 100])
-            assert_shape(secondary_logits, [None, 100])
-            return primary_logits, secondary_logits
-
 
 def errors(logits, labels, name=None):
     """Compute error mean and whether each unlabeled example is erroneous
