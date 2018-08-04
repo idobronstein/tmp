@@ -26,8 +26,8 @@ import tensorflow as tf  # pylint: disable=g-bad-import-order
 
 #from official.utils.flags import core as flags_core
 #from official.utils.logs import logger
-from . import resnet_model
-from . import resnet_run_loop
+import resnet_model
+import resnet_run_loop
 
 _HEIGHT = 32
 _WIDTH = 32
