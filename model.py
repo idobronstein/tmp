@@ -15,10 +15,10 @@ import tensorflow as tf
 from tensorflow.contrib import metrics, slim
 from tensorflow.contrib.metrics import streaming_mean
 
-from . import nn
-from . import weight_norm as wn
-from .framework import ema_variable_scope, name_variable_scope, assert_shape, HyperparamVariables
-from . import string_utils
+import nn
+import weight_norm as wn
+from framework import ema_variable_scope, name_variable_scope, assert_shape, HyperparamVariables
+import string_utils
 
 
 LOG = logging.getLogger('main')
