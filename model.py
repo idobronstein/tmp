@@ -430,6 +430,7 @@ def tower(inputs,
             print('Layer2')
             net = wn.conv2d(net, 128, scope="conv_1_2")
             print('Layer3')
+            import pdb; pdb.set_trace()
             net = wn.conv2d(net, 128, scope="conv_1_3")
             net = slim.max_pool2d(net, [2, 2], scope='max_pool_1')
             net = slim.dropout(net, 1 - dropout_probability, scope='dropout_probability_1')
