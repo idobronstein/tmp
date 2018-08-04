@@ -12,7 +12,7 @@ import logging
 import os
 from collections import namedtuple
 
-from . import cifar10_main  as resnet
+import cifar10_main  as resnet
 
 import tensorflow as tf
 from tensorflow.contrib import metrics, slim
