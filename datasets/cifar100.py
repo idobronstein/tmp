@@ -7,7 +7,7 @@ from .utils import random_balanced_partitions, random_partitions
 
 
 class Cifar100ZCA:
-    DATA_PATH = '/specific/etapp5_2/gamir/gamir/git/mean-teacher/tensorflow/data/images/cifar/cifar100/cifar100_gcn_zca_v2.npz'
+    DATA_PATH = '/specific/netapp5_2/gamir/gamir/git/mean-teacher/tensorflow/data/images/cifar/cifar100/cifar100_gcn_zca_v2.npz'
     VALIDATION_SET_SIZE = 5000  # 10% of the training set
     UNLABELED = -1
 
