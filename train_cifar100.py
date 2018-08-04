@@ -20,7 +20,7 @@ from run_context import RunContext
 from datasets import Cifar100ZCA
 from model import Model
 #from mean_teacher.myresnet_model import Model
-from . import minibatching
+import minibatching
 
 
 logging.basicConfig(level=logging.INFO)
